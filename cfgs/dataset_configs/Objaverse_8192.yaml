@@ -1,0 +1,8 @@
+#NAME: Objaverse_8192
+#DATA_PATH: /disk1/yabin/objaverse/objaverse_8192pc
+#N_POINTS: 8192
+#PC_PATH: /disk1/yabin/objaverse/objaverse_8192pc
+NAME: Objaverse_8192
+DATA_PATH: /data0/yabin/objaverse/objaverse_8192pc
+N_POINTS: 8192
+PC_PATH: /data0/yabin/objaverse/objaverse_8192pc

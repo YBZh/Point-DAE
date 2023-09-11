@@ -1,0 +1,5 @@
+NAME: ModelNet_Official
+DATA_PATH: data/ModelNet/modelnet40_normal_resampled #Not used.
+N_POINTS: 1024
+NUM_CATEGORY: 40 #Not used.
+USE_NORMALS: FALSE #Not used.

@@ -1,0 +1,4 @@
+NAME: ShapeNetClass
+DATA_PATH: data/ShapeNet55-34/ShapeNet-55-subset-task-affinity
+N_POINTS: 1024
+PC_PATH: data/ShapeNet55-34/shapenet_pc_masksurf_with_normal
