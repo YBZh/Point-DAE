@@ -31,8 +31,9 @@ def set_bn_eval(m):
     classname = m.__class__.__name__
     ## if the feature dim is 256, then is belongs to the new classifier and we should learn its running mean and variance.
     ## Note that this only works for classification. We should be careful with the feature dimension in the segmentation tasks.
+    ## In segmentation, we typically update all parameters.
     if classname.find('BatchNorm') != -1 and m.weight.size(0) != 256:
-        print('fixing the running mean and variance of the following BN layer:',m)
+        # print('fixing the running mean and variance of the following BN layer:',m)
         m.eval()
 
 
@@ -416,7 +417,7 @@ def run_net_rotation(args, config, train_writer=None, val_writer=None):
             points = pointnet2_utils.gather_operation(points.transpose(1, 2).contiguous(), fps_idx).transpose(1,
                                                                                                               2).contiguous()  # (B, N, 3)
             # import pdb; pdb.set_trace()
-            # points = train_transforms(points)
+            points = train_transforms(points) # active to train data with rotated point cloud. 
 
             ###################### calculating complexity
             # macs, params = get_model_complexity_info(base_model, (2, 1024, 3), as_strings=False,
@@ -631,23 +632,6 @@ def validate_vote(base_model, test_dataloader, epoch, val_writer, args, config, 
     return Acc_Metric(acc)
 
 
-#### test only
-def test_net(args, config):
-    logger = get_logger(args.log_name)
-    print_log('Tester start ... ', logger = logger)
-    _, test_dataloader = builder.dataset_builder(args, config.dataset.test)
-    base_model = builder.model_builder(config.model)
-    # load checkpoints
-    builder.load_model(base_model, args.ckpts, logger = logger) # for finetuned transformer
-    # base_model.load_model_from_ckpt(args.ckpts) # for BERT
-    if args.use_gpu:
-        base_model.to(args.local_rank)
-
-    #  DDP    
-    if args.distributed:
-        raise NotImplementedError()
-     
-    test(base_model, test_dataloader, args, config, logger=logger)
 
 
 # from modelnetc_utils import eval_corrupt_wrapper, ModelNetC
@@ -698,6 +682,24 @@ def test_net_corruption(args, config):
     # return overall_accuracy
     # # test(base_model, test_dataloader, args, config, logger=logger)
 
+#### test only
+def test_net(args, config):
+    logger = get_logger(args.log_name)
+    print_log('Tester start ... ', logger = logger)
+    _, test_dataloader = builder.dataset_builder(args, config.dataset.test)
+    base_model = builder.model_builder(config.model)
+    # load checkpoints
+    builder.load_model(base_model, args.ckpts, logger = logger) # for finetuned transformer
+    # base_model.load_model_from_ckpt(args.ckpts) # for BERT
+    if args.use_gpu:
+        base_model.to(args.local_rank)
+
+    #  DDP    
+    if args.distributed:
+        raise NotImplementedError()
+     
+    test(base_model, test_dataloader, args, config, logger=logger)
+
 def test(base_model, test_dataloader, args, config, logger = None):
 
     base_model.eval()  # set model to eval mode
@@ -744,6 +746,91 @@ def test(base_model, test_dataloader, args, config, logger = None):
                 acc = this_acc
             print_log('[TEST_VOTE_time %d]  acc = %.4f, best acc = %.4f' % (time, this_acc, acc), logger=logger)
         print_log('[TEST_VOTE] acc = %.4f' % acc, logger=logger)
+
+
+def vis_saliency_map(args, config):
+    logger = get_logger(args.log_name)
+    print_log('Start visualize saliency map ... ', logger = logger)
+    _, test_dataloader = builder.dataset_builder(args, config.dataset.test)
+    base_model = builder.model_builder(config.model)
+    # load checkpoints
+    builder.load_model(base_model, args.ckpts, logger = logger) # for finetuned transformer
+    # base_model.load_model_from_ckpt(args.ckpts) # for BERT
+    if args.use_gpu:
+        base_model.to(args.local_rank)
+
+    #  DDP    
+    if args.distributed:
+        raise NotImplementedError()
+    
+    base_model.eval()  # set model to eval mode
+    test_pred  = []
+    test_label = []
+    npoints = config.npoints
+    test_points_gradients = []
+
+    # with torch.no_grad():
+    for idx, (taxonomy_ids, model_ids, data) in enumerate(test_dataloader):
+        points = data[0].cuda()
+        label = data[1].cuda()
+
+        _, points = misc.fps(points, npoints)
+        points.requires_grad_() ## requires_grad=True to enable gradient visualization.
+        logits = base_model(points) ## 32*15
+        if isinstance(logits, dict): # for PointNet with multiple output
+            logits = logits['cls'] 
+        
+        # ipdb.set_trace()
+        ## here we use the softmax score for gradient; We can also use class score before softmax following: 
+        # Deep Inside Convolutional Networks: Visualisin Image Classification Models and Saliency Maps
+        loss, acc = base_model.get_loss_acc(logits, label)
+        # ipdb.set_trace()
+        # _loss = loss  ## softmax-based score
+        _loss = logits[0, label]  ## logit-based score.
+        _loss.backward()
+        ################### get the gradient to the input point cloud here. 
+        # ipdb.set_trace()
+        ## points.grad  ### 1*1024*3, 可能需要xyz 三个维度取abs & sum. 存原始点，以及原始点的gradient. 
+        points_gradient = torch.cat((points, points.grad), dim=2)
+        test_points_gradients.append(points_gradient.detach())
+
+        target = label.view(-1)
+        pred = logits.argmax(-1).view(-1)
+
+        test_pred.append(pred.detach())
+        test_label.append(target.detach())
+        # print(idx)
+
+    test_pred = torch.cat(test_pred, dim=0)
+    test_label = torch.cat(test_label, dim=0)
+    test_points_gradients = torch.cat(test_points_gradients, dim=0).cpu()
+    save_path = '/home/notebook/code/personal/S9052995/syn_pro/Point-DAE/'
+    # save_path = save_path + 'affine_only_logit.pt'
+    # save_path = save_path + 'droplocal_only_logit.pt'
+    save_path = save_path + 'droplocal_affine_logit.pt'
+    # save_path = save_path + 'droplocal_only_softmax.pt'
+    torch.save(test_points_gradients, save_path)
+    ipdb.set_trace()
+
+    if args.distributed:
+        test_pred = dist_utils.gather_tensor(test_pred, args)
+        test_label = dist_utils.gather_tensor(test_label, args)
+
+    acc = (test_pred == test_label).sum() / float(test_label.size(0)) * 100.
+    print_log('[TEST] acc = %.4f' % acc, logger=logger)
+
+    if args.distributed:
+        torch.cuda.synchronize()
+
+    #     print_log(f"[TEST_VOTE]", logger = logger)
+    #     acc = 0.
+    #     for time in range(1, 300):
+    #         this_acc = test_vote(base_model, test_dataloader, 1, None, args, config, logger=logger, times=10)
+    #         if acc < this_acc:
+    #             acc = this_acc
+    #         print_log('[TEST_VOTE_time %d]  acc = %.4f, best acc = %.4f' % (time, this_acc, acc), logger=logger)
+    #     print_log('[TEST_VOTE] acc = %.4f' % acc, logger=logger)
+    # # test(base_model, test_dataloader, args, config, logger=logger)
 
 def test_vote(base_model, test_dataloader, epoch, val_writer, args, config, logger = None, times = 10):
 

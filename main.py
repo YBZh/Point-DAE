@@ -3,7 +3,7 @@ from tools import finetune_run_net as finetune
 from tools import test_run_net as test_net
 from tools import test_net_corruption
 from tools import run_net_rotation
-from tools import svm_classification, task_affinity
+from tools import svm_classification, task_affinity, vis_saliency_map
 from utils import parser, dist_utils, misc
 from utils.logger import *
 from utils.config import *
@@ -93,6 +93,8 @@ def main():
     # run
     if args.test:
         test_net(args, config)
+    elif args.vis_saliency:
+        vis_saliency_map(args, config)
     elif args.test_corruption:
         test_net_corruption(args, config)
     else:

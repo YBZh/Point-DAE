@@ -1,9 +1,11 @@
-# Point-DAE
+# [Point-DAE](https://arxiv.org/pdf/2211.06841)
 
 # Update:
-2023/09/11: update an init version, more downstream tasks to be added.
+-> 2024/08: Checkpoints released.
 
-## Point-DAE: Denoising Autoencoders for Self-supervised Point Cloud Learning
+-> 2023/09: update an init version, more downstream tasks to be added.
+
+## [Point-DAE: Denoising Autoencoders for Self-supervised Point Cloud Learning](https://arxiv.org/pdf/2211.06841)
 Masked autoencoder has demonstrated its effectiveness in self-supervised point cloud learning. Considering that masking is a kind of corruption, in this work we explore a more general denoising autoencoder for point cloud learning (Point-DAE) by investigating more types of corruptions beyond masking. Specifically, we degrade the point cloud with certain corruptions as input, and learn an encoder-decoder model to reconstruct the original point cloud from its corrupted version. 
 Three corruption families (\ie, density/masking, noise, and affine transformation) and a total of fourteen corruption types are investigated with traditional non-Transformer encoders.
 Besides the popular masking corruption, we identify another effective corruption family, \ie, affine transformation. The affine transformation disturbs all points globally, which is complementary to the masking corruption where some local regions are dropped. 
@@ -14,9 +16,9 @@ Extensive experiments on tasks of object classification, few-shot learning, robu
 |:-------------:|
 | The studied corruptions. |
 
-| ![./figure/net.png](./figure/results_table.jpg) |
-|:-------------:|
-| Results with different corruptions. |
+<p align="center">
+  <img src="./figure/results_table.jpg" alt="Results with different corruptions" width="60%">
+</p>
 
 ## 1. Requirements
 PyTorch >= 1.7.0;
@@ -45,12 +47,15 @@ pip install --upgrade https://github.com/unlimblue/KNN_CUDA/releases/download/0.
 
 We use ShapeNet, ScanObjectNN, ModelNet40 and ShapeNetPart in this work. See [DATASET.md](./DATASET.md) for details.
 
-## 3. Point-DAE Models
+## 3. Pre-trained Models
 
-Pre-trained models will be provided here. 
+|  Task | Dataset | Config | Download|      
+|  ----- | ----- |-----|   -----|
+|  Pre-training | ShapeNet |[pretrain_nontransformer](./cfgs/pretrain_PointCAE_affine_r3_dropout_local_4xlonger.yaml) | [Google Drive](https://drive.google.com/drive/folders/1Nl3g-_HqHJ3J-Cjdx99ZmM29JXnJJZqZ?usp=sharing) |
+|  Pre-training | ShapeNet |[pretrain_transformer](./cfgs/pretrain_PointCAE_transformer_dropout_patch_affine_r3_maskpatch_p0005_whole.yaml) | [Google Drive](https://drive.google.com/drive/folders/1vAktAxgSNPNTNwLG89xcfrmRDWIYlhEH?usp=sharing) |
 
 ## 4. Running
-We provide all the scripts for pre-training and fine-tuning in the [run.sh](./run.sh). 
+We provide all the scripts for pre-training and fine-tuning in the [rerun.sh](./rerun.sh) and [rerun2.sh](./rerun2.sh). 
 Additionally, we provide a simple tool to collect the mean and standard deviation of results, for example: ```python parse_test_res.py ./experiments/{experiments_settting}/cfgs/ --multi-exp```
 
 ### Point-DAE Pre-training

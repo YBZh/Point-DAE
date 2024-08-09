@@ -16,10 +16,10 @@ scheduler: {
 dataset : {
   train : { _base_: cfgs/dataset_configs/ShapeNet-55_withnormal.yaml,
             others: {subset: 'train', npoints: 1024, aug_type: ['norm'], corrupt_type: ['affine_r3']}},
-  val : { _base_: cfgs/dataset_configs/ShapeNet-55_withnormal.yaml,
-            others: {subset: 'test', npoints: 1024, aug_type: ['norm'], corrupt_type: ['affine_r3']}},
-  test : { _base_: cfgs/dataset_configs/ShapeNet-55_withnormal.yaml,
-            others: {subset: 'test', npoints: 1024, aug_type: ['norm'], corrupt_type: ['affine_r3']}}}
+  val : { _base_: cfgs/dataset_configs/ModelNet40Official.yaml,
+            others: {subset: 'test', npoints: 1024, aug_type: ['clean']}},
+  extra_train : { _base_: cfgs/dataset_configs/ModelNet40Official.yaml,
+            others: {subset: 'train', npoints: 1024, aug_type: ['clean']}}}
 
 model : {
   NAME: Point_CAE_PointNetv2,

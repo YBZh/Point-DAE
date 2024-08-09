@@ -1,5 +1,5 @@
+# Codes to generate the dataset variants with SVD pose or Random Pose.
 import os
-
 import torch
 import numpy as np
 from pyntcloud import PyntCloud

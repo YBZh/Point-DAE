@@ -307,7 +307,7 @@ def validate(base_model, extra_train_dataloader, test_dataloader, epoch, val_wri
             assert points.size(1) == npoints
             feature = base_model(points, points, vis=False, return_feat = True)
             target = label.view(-1)
-
+            # ipdb.set_trace()
             train_features.append(feature.detach())
             train_label.append(target.detach())
 

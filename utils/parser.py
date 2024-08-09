@@ -75,6 +75,11 @@ def get_args():
         default=False,
         help = 'apply svm classification to the extracted features')
     parser.add_argument(
+        '--vis_saliency',
+        action='store_true',
+        default=False,
+        help = 'visualize the gradient saliency map')
+    parser.add_argument(
         '--task_affinity',
         action='store_true',
         default=False,

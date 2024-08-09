@@ -156,7 +156,7 @@ class Point_CAE_DGCNN_FCOnly(nn.Module):
         self.num_fine = self.grid_size ** 2 * self.num_coarse  # 16384
         self.meshgrid = [[-self.grid_scale, self.grid_scale, self.grid_size],
                          [-self.grid_scale, self.grid_scale, self.grid_size]]
-        self.folding1 = nn.Sequential(
+        self.recfc = nn.Sequential(
             nn.Linear(1024, 1024),
             nn.ReLU(),
             nn.Linear(1024, 1024),
@@ -221,7 +221,7 @@ class Point_CAE_DGCNN_FCOnly(nn.Module):
             corrupted_pts = corrupted_pts.transpose(1, 2).contiguous()  ## the input to PointNet shoube be B*3*N
 
             feature = self.dgcnn_encoder(corrupted_pts)
-            coarse = self.folding1(feature)
+            coarse = self.recfc(feature)
             coarse = coarse.view(-1, self.num_coarse, 3)
             loss_coarse = self.loss_func(coarse, pts)
             if vis:
