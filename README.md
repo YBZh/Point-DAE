@@ -1,6 +1,8 @@
 # [Point-DAE](https://arxiv.org/pdf/2211.06841)
 
 # Update:
+-> 2025/04: Paper accepted by [IEEE Transactions on Neural Networks and Learning Systems (TNNLS)](https://ieeexplore.ieee.org/document/10977775)
+
 -> 2024/08: Checkpoints released.
 
 -> 2023/09: update an init version, more downstream tasks to be added.
